@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 const functions = require('firebase-functions');
-
+const app = admin.initializeApp();
 import SquareConnect = require('square-connect');
 import UserRecord = admin.auth.UserRecord;
 const defaultClient = SquareConnect.ApiClient.instance;
@@ -27,15 +27,22 @@ exports.userCreator = functions.region('europe-west2').auth.user().onCreate((use
             }
 
             const customersApi = new SquareConnect.CustomersApi();
-            return await customersApi.createCustomer(customerDetails)
+            const response = await customersApi.createCustomer(customerDetails)
 
+            if(response === undefined || response.customer === undefined){
+                console.log("Error in square response, recieved undefined")
+            }else{
+                await app.firestore().collection("Users").doc(userId).set({"square_id": response.customer.id},{merge:true})
+            }
+        return "success"
         }else{
             console.log("Email undefined")
             return null;
         }
     }
 
-    console.log(createSquareUser())
+    return(createSquareUser())
+
 })
 
 
